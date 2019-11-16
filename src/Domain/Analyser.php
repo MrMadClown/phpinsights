@@ -6,6 +6,7 @@ namespace NunoMaduro\PhpInsights\Domain;
 
 use ReflectionMethod;
 use SebastianBergmann\PHPLOC\Analyser as BaseAnalyser;
+use Spatie\Async\Pool;
 
 /**
  * Code originally taken from {SebastianBergmann\PHPLOC\Analyser}.
@@ -67,9 +68,15 @@ final class Analyser
 
         $collector = new Collector($dir);
 
+        $pool = Pool::create();
+
         foreach ($files as $file) {
-            $this->analyseFile($collector, $file);
+            $pool->add(function () use ($collector, $file): void {
+                $this->analyseFile($collector, $file);
+            });
         }
+
+        $pool->wait();
 
         return $collector;
     }
